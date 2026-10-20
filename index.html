@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="fil">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Alamin kung aling sari-sari store sa malapit ang may stock, at i-reserve agad bago ka pumunta.">
+<title>Aling Nena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+  /* Standalone copy of the published landing page (same reset as the artifact skeleton). */
+  html, body { margin: 0; }
+  img { max-width: 100%; }
+  /* Layout: a phone-first single column; the hero pairs the pitch with a sample of live store replies, then steps, store pitch, install guide, rules, FAQ. Palette and type follow the app's AnTheme; light theme only. */
+  :root {
+    --bg: #FBFAF8;
+    --soft: #F3F1EC;
+    --line: #DEDAD2;
+    --fg: #1F2A27;
+    --muted: #5E6763;
+    --teal: #2F7D6D;
+    --clay: #B5562F;
+    --awning: #F6E7D6;
+    --on: #FFFFFF;
+    color-scheme: light;
+    --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 17px; line-height: 1.55; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding-inline: 20px; }
+  h1, h2, h3 { line-height: 1.15; text-wrap: balance; margin: 0; }
+  h2 { font-size: clamp(1.6rem, 4vw, 2.1rem); font-weight: 800; letter-spacing: -0.02em; }
+  h3 { font-size: 1.1rem; font-weight: 700; }
+  p { margin: 0; }
+  a { color: var(--teal); }
+  a:focus-visible, button:focus-visible { outline: 3px solid var(--clay); outline-offset: 3px; border-radius: 6px; }
+  .eyebrow { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--clay); }
+  .lead { color: var(--muted); font-size: 1.1rem; max-width: 34em; }
+  section { padding-block: 56px; border-top: 1px solid var(--line); }
+
+  /* Awning: the store mark's stripes, drawn as the page's top edge */
+  .awning { height: 18px; background: repeating-linear-gradient(90deg, var(--clay) 0 48px, var(--awning) 48px 96px);
+    -webkit-mask: radial-gradient(circle at 24px 0, #000 24px, transparent 24.5px) 0 0 / 48px 18px repeat-x;
+            mask: radial-gradient(circle at 24px 0, #000 24px, transparent 24.5px) 0 0 / 48px 18px repeat-x; }
+
+  header.top { display: flex; align-items: center; gap: 12px; padding-block: 18px; }
+  .mark { width: 40px; height: 40px; border-radius: 10px; background: var(--teal); display: grid; place-items: center; flex: none; }
+  .brand { font-weight: 800; font-size: 1.15rem; letter-spacing: -0.01em; }
+  .pill { margin-left: auto; font-size: 0.8rem; font-weight: 600; color: var(--teal); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
+
+  .hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center; padding-block: 28px 64px; }
+  .hero > * { min-width: 0; }
+  .hero h1 { font-size: clamp(2.6rem, 8vw, 4.4rem); font-weight: 800; letter-spacing: -0.035em; }
+  .hero h1 span { color: var(--clay); }
+  .hero .lead { margin-top: 16px; }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 24px; border-radius: 14px;
+    font: 700 1rem var(--font); text-decoration: none; border: 1.5px solid transparent; cursor: pointer; }
+  .btn.primary { background: var(--clay); color: var(--on); }
+  .btn.secondary { background: transparent; color: var(--fg); border-color: var(--line); }
+  .btn[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
+  .fine { font-size: 0.88rem; color: var(--muted); margin-top: 12px; }
+
+  /* Sample of the app: a search and replies arriving */
+  .demo { background: var(--soft); border: 1px solid var(--line); border-radius: 24px; padding: 20px; }
+  .demo .tag { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .search { margin-top: 10px; display: flex; align-items: center; gap: 10px; background: var(--bg); border: 1.5px solid var(--teal); border-radius: 14px; padding: 12px 14px; font-weight: 600; }
+  .status { display: flex; justify-content: space-between; gap: 8px; margin-top: 14px; font-size: 0.9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .offers { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+  .offer { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; animation: rise 0.5s ease both; }
+  .offer:nth-child(2) { animation-delay: 0.35s; } .offer:nth-child(3) { animation-delay: 0.7s; }
+  .offer b { font-weight: 700; min-width: 0; }
+  .offer .price { font-weight: 800; font-size: 1.1rem; text-align: right; font-variant-numeric: tabular-nums; }
+  .offer small { grid-column: 1 / -1; color: var(--muted); font-size: 0.85rem; }
+  @keyframes rise { from { transform: translateY(8px); } to { transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .offer { animation: none; } }
+
+  .steps { list-style: none; margin: 32px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: s; }
+  .steps li { counter-increment: s; display: grid; gap: 8px; align-content: start; min-width: 0; }
+  .steps li::before { content: counter(s); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: var(--teal); color: var(--on); }
+  .steps p { color: var(--muted); }
+
+  .store { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 40px; align-items: start; }
+  .store > * { min-width: 0; }
+  .checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .checks li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; }
+  .checks svg { margin-top: 2px; }
+  .checks span { color: var(--muted); display: block; font-size: 0.95rem; }
+
+  .install { background: var(--soft); border: 1px solid var(--line); border-radius: 24px; padding: 28px; margin-top: 28px; }
+  .install ol { margin: 0; padding-left: 1.4em; display: grid; gap: 14px; }
+  .install li::marker { font-weight: 800; color: var(--clay); }
+  .install li span { display: block; color: var(--muted); font-size: 0.95rem; }
+  .helper { margin-top: 20px; padding-top: 18px; border-top: 1px dashed var(--line); color: var(--muted); }
+
+  .facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; margin-top: 28px; }
+  .fact { background: var(--bg); padding: 20px; display: grid; gap: 4px; align-content: start; }
+  .fact strong { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; color: var(--teal); font-variant-numeric: tabular-nums; }
+  .fact span { color: var(--muted); font-size: 0.92rem; }
+  .blocked { margin-top: 18px; color: var(--muted); font-size: 0.95rem; }
+
+  .faq { margin-top: 24px; display: grid; gap: 10px; max-width: 760px; }
+  details { border: 1px solid var(--line); border-radius: 14px; padding: 0 18px; background: var(--bg); }
+  summary { min-height: 56px; display: flex; align-items: center; font-weight: 700; cursor: pointer; list-style: none; gap: 12px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; margin-left: auto; font-size: 1.4rem; color: var(--clay); font-weight: 600; }
+  details[open] summary::after { content: "−"; }
+  details p { padding-bottom: 16px; color: var(--muted); }
+
+  footer { border-top: 1px solid var(--line); padding-block: 32px 48px; display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; font-size: 0.92rem; color: var(--muted); }
+  footer a { min-height: 48px; display: inline-flex; align-items: center; }
+  footer .spacer { flex: 1; }
+
+  @media (max-width: 820px) {
+    .hero, .store { grid-template-columns: 1fr; gap: 32px; }
+    .steps { grid-template-columns: 1fr; }
+    .facts { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 420px) {
+    .wrap { padding-inline: 16px; }
+    .facts { grid-template-columns: 1fr; }
+    .btn { width: 100%; }
+    .install { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="awning" aria-hidden="true"></div>
+<div class="wrap">
+  <header class="top">
+    <div class="mark" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24"><path fill="#FBFAF8" d="M4 9h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path fill="#F6E7D6" d="M3 5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v4a2.25 2.25 0 0 1-4.5 0 2.25 2.25 0 0 1-4.5 0 2.25 2.25 0 0 1-4.5 0A2.25 2.25 0 0 1 3 9z"/><path fill="#2F7D6D" d="M12 19s-2.5-2.6-2.5-4.6a2.5 2.5 0 0 1 5 0C14.5 16.4 12 19 12 19z"/></svg>
+    </div>
+    <span class="brand">Aling Nena</span>
+    <span class="pill">Pilot · Android</span>
+  </header>
+
+  <div class="hero">
+    <div>
+      <p class="eyebrow">Para sa mga taga-subdivision</p>
+      <h1>Anong <span>sa’yo?</span></h1>
+      <p class="lead">Alamin kung aling sari-sari store sa malapit ang may stock, at i-reserve agad bago ka pumunta. Wala nang ikot-ikot o text na "Meron ba kayo?"</p>
+      <div class="cta-row">
+        <a class="btn primary" id="join-btn" href="#install">Sumali sa pilot</a>
+        <a class="btn secondary" href="#tindahan">May tindahan ako</a>
+      </div>
+      <p class="fine">Libre i-download sa Google Play. Android lang muna habang pilot.</p>
+    </div>
+
+    <figure class="demo" aria-label="Halimbawa ng search at mga sagot ng tindahan" style="margin:0">
+      <span class="tag">Halimbawa</span>
+      <div class="search">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        Toyo
+      </div>
+      <div class="status"><span>3 tindahan ang may toyo</span><span>Naghihintay pa · 1:42</span></div>
+      <ul class="offers">
+        <li class="offer"><b>Tindahan ni Aling Rosa</b><span class="price">₱18</span><small>Datu Puti 200 ml · 120 m · Pick up</small></li>
+        <li class="offer"><b>Mang Ben Store</b><span class="price">₱19</span><small>Silver Swan 200 ml · 260 m · Pick up</small></li>
+        <li class="offer"><b>Lorna’s Sari-sari</b><span class="price">₱34</span><small>Datu Puti 385 ml · 410 m · Pick up</small></li>
+      </ul>
+    </figure>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Paano gumagana</p>
+    <h2>Isang tanong, sagot mula sa mga tindahan sa malapit</h2>
+    <ol class="steps">
+      <li><h3>Itanong</h3><p>I-type ang kailangan mo, gaya ng toyo, softdrinks o diaper. Matatanggap ito ng mga bukas na tindahan sa loob ng 500 metro.</p></li>
+      <li><h3>Ikumpara</h3><p>May 3 minuto ang mga tindahan para sumagot ng brand, size at presyo. Pumili ayon sa presyo, layo o rating.</p></li>
+      <li><h3>I-reserve at kunin</h3><p>Itatabi ng tindahan ang item mo. Ipakita ang QR code o 4-digit code pagdating mo, at magbayad sa tindahan.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section id="tindahan">
+  <div class="wrap store">
+    <div>
+      <p class="eyebrow">Para sa may tindahan</p>
+      <h2>Mga suki na nagtatanong na, bago pa pumunta</h2>
+      <p class="lead" style="margin-top:14px">Gamitin ang parehong account para irehistro ang tindahan mo. Sinusuri muna ang bawat tindahan bago ito lumabas sa mga buyer.</p>
+    </div>
+    <ul class="checks">
+      <li><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="var(--teal)"/><path d="m7 12.5 3.2 3L17 9" fill="none" stroke="var(--bg)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div><strong>May notification kapag may nagtanong</strong><span>Sumagot ng hanggang 3 option at presyo, ilang tap lang.</span></div></li>
+      <li><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="var(--teal)"/><path d="m7 12.5 3.2 3L17 9" fill="none" stroke="var(--bg)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div><strong>Bukas o sarado, isang switch</strong><span>Itakda rin ang oras ng tindahan para kusang magsara.</span></div></li>
+      <li><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="var(--teal)"/><path d="m7 12.5 3.2 3L17 9" fill="none" stroke="var(--bg)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div><strong>I-scan ang QR pagkuha</strong><span>Sigurado kang ang buyer na nag-reserve ang kumukuha.</span></div></li>
+      <li><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="var(--teal)"/><path d="m7 12.5 3.2 3L17 9" fill="none" stroke="var(--bg)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div><strong>Listahan ng item at benta</strong><span>I-save ang mga madalas mong itinda, at tingnan ang benta kada araw, linggo o buwan.</span></div></li>
+    </ul>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <p class="eyebrow">Paano sumali sa pilot</p>
+    <h2>Mga 3 minuto lang, sa Android phone mo</h2>
+    <p class="lead" style="margin-top:14px">Habang pilot pa, kailangan munang sumali bilang tester bago lumabas ang app sa Play Store.</p>
+    <div class="install">
+      <ol>
+        <li><strong>Buksan ang Play Store at tingnan ang account mo</strong><span>I-tap ang bilog na picture sa itaas. Iyan ang Gmail na gagamitin mo sa lahat ng susunod na hakbang.</span></li>
+        <li><strong>Sumali sa Aling Nena pilot group</strong><span id="group-step">Buksan ang <a href="https://groups.google.com/g/alingnena-tester" target="_blank" rel="noopener">alingnena-tester group</a> at i-tap ang "Join group" gamit ang parehong Gmail. Kasali ka na agad.</span></li>
+        <li><strong>Buksan ang tester link at i-tap ang "Become a tester"</strong><span id="optin-step">Ipapadala namin ang link sa Messenger o sa group chat ng subdivision.</span></li>
+        <li><strong>I-tap ang "Download it on Google Play," tapos Install</strong><span>O buksan ang <a href="https://play.google.com/store/apps/details?id=com.creativegrpcx.alingnenasuperapp" target="_blank" rel="noopener">Aling Nena sa Play Store</a>. Puwedeng ilang minuto bago lumabas ang Install button pagkatapos sumali.</span></li>
+        <li><strong>Buksan ang app at mag-sign in gamit ang parehong Gmail</strong><span>Ilagay ang address pin at contact number mo, at handa ka na.</span></li>
+      </ol>
+      <p class="helper">Hindi sanay sa ganito? Okay lang. Puwede ka naming puntahan para i-set up ito sa phone mo, kasama ang pagrehistro ng tindahan.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Mga patakaran</p>
+    <h2>Simple at patas para sa buyer at tindahan</h2>
+    <div class="facts">
+      <div class="fact"><strong>500 m</strong><span>Mga tindahan lang na malapit sa address pin mo ang tatanungin.</span></div>
+      <div class="fact"><strong>3 min</strong><span>Oras ng tindahan para sumagot. Puwede ka pang pumili hanggang 10 minuto pagkatapos.</span></div>
+      <div class="fact"><strong>Pickup</strong><span>Ikaw ang pupunta sa tindahan, kaya walang delivery fee.</span></div>
+      <div class="fact"><strong>Cash o e-wallet</strong><span>Sa tindahan ka magbabayad, kung paano nila tinatanggap.</span></div>
+    </div>
+    <p class="blocked">Isang request lang ang bukas kada buyer. Hindi puwedeng i-request ang reseta na gamot, alak at sigarilyo. Kapag ilang beses hindi kinuha ang na-reserve, pansamantalang hindi muna makakapag-reserve.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Mga tanong</p>
+    <h2>Madalas itanong</h2>
+    <div class="faq">
+      <details><summary>May iPhone ako. Puwede ba?</summary><p>Android lang muna habang pilot. Susunod ang iPhone kapag tapos na ang pilot.</p></details>
+      <details><summary>Bakit kailangan pang sumali bilang tester?</summary><p>Hinihingi ito ng Google sa mga bagong app bago sila lumabas sa Play Store. Pareho lang ang app, at maaari ka nang umalis sa test kahit kailan.</p></details>
+      <details><summary>Ano ang ginagawa ninyo sa location ko?</summary><p>Ginagamit lang ang address pin mo para malaman kung aling mga tindahan ang malapit. Hindi ito ipinapakita sa ibang buyer. Basahin ang buong <a id="privacy-inline" href="https://app.notion.com/p/Privacy-Policy-3fe152519af881b59e5ed707221ee582">Privacy Policy</a>.</p></details>
+      <details><summary>Paano kung wala na palang stock ang tindahan?</summary><p>Puwedeng pindutin ng tindahan ang "Wala na pala," at aabisuhan ka agad para makapili ng ibang tindahan.</p></details>
+      <details><summary>Paano burahin ang account ko?</summary><p>Sa app: Ako, tapos Burahin ang account. Puwede ring humiling nang walang app sa <a href="https://app.notion.com/p/Delete-your-Aling-Nena-account-3ff152519af8813c8b39ec491cfe9643">pahinang ito</a>.</p></details>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <footer>
+    <span class="brand" style="color:var(--fg)">Aling Nena</span>
+    <span>Pilot sa piling subdivision</span>
+    <span class="spacer"></span>
+    <a href="https://app.notion.com/p/Privacy-Policy-3fe152519af881b59e5ed707221ee582">Privacy Policy</a>
+    <a href="https://app.notion.com/p/Delete-your-Aling-Nena-account-3ff152519af8813c8b39ec491cfe9643">Burahin ang account</a>
+    <span id="contact">Contact: <span style="user-select:all;color:var(--fg)">creativegrpcx@gmail.com</span></span>
+  </footer>
+</div>
+
+<script>
+  // Fill these in once the Play closed test and the Google Group exist; the page adapts.
+  const LINKS = {
+    optIn: "https://play.google.com/apps/testing/com.creativegrpcx.alingnenasuperapp",   // Play Console → Closed testing → Testers → "Join on the web" link
+    group: "https://groups.google.com/g/alingnena-tester",   // https://groups.google.com/g/<your-group>
+  };
+  if (LINKS.optIn) {
+    const btn = document.getElementById("join-btn");
+    btn.href = LINKS.optIn;
+    btn.target = "_blank";
+    btn.rel = "noopener";
+    document.getElementById("optin-step").innerHTML =
+      'Narito ang link: <a href="' + LINKS.optIn + '" target="_blank" rel="noopener">sumali sa Aling Nena test</a>.';
+  }
+  if (LINKS.group) {
+    document.getElementById("group-step").innerHTML =
+      'Buksan ang <a href="' + LINKS.group + '" target="_blank" rel="noopener">alingnena-tester group</a> at i-tap ang "Join group" gamit ang parehong Gmail. Kasali ka na agad.';
+  }
+</script>
+</body>
+</html>
