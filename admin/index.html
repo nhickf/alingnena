@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Aling Nena Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  /* Admin console for store approval and reports. Same palette as the landing page; every read and
+     write goes through the admin_* RPCs (supabase/migrations/20261020000400_admin_console.sql), which
+     refuse anyone not in private.admins. Store fields are user input: render them with textContent only. */
+  :root {
+    --bg: #FBFAF8;
+    --soft: #F3F1EC;
+    --line: #DEDAD2;
+    --fg: #1F2A27;
+    --muted: #5E6763;
+    --teal: #2F7D6D;
+    --clay: #B5562F;
+    --danger: #A33A2A;
+    --on: #FFFFFF;
+    color-scheme: light;
+    --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 16px; line-height: 1.5; }
+  a { color: var(--teal); }
+  button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid var(--clay); outline-offset: 2px; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 16px 64px; }
+  header { display: flex; align-items: center; gap: 12px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 1.15rem; margin: 0; flex: 1; }
+  .who { color: var(--muted); font-size: 0.9rem; overflow-wrap: anywhere; }
+  .btn { min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1.5px solid var(--teal); background: var(--teal); color: var(--on);
+         font: 600 0.95rem var(--font); cursor: pointer; }
+  .btn.ghost { background: transparent; color: var(--teal); }
+  .btn.danger { background: transparent; border-color: var(--danger); color: var(--danger); }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+  .card { background: var(--on); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  form.login { max-width: 380px; margin: 48px auto; display: grid; gap: 12px; }
+  label { display: grid; gap: 4px; font-weight: 600; font-size: 0.9rem; }
+  input { min-height: 44px; padding: 0 12px; border: 1.5px solid var(--line); border-radius: 10px; font: 400 1rem var(--font); background: var(--bg); color: var(--fg); }
+  .error { color: var(--danger); font-weight: 600; }
+  .muted { color: var(--muted); }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 16px; }
+  .tab { min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--on); color: var(--fg);
+         font: 600 0.9rem var(--font); cursor: pointer; }
+  .tab[aria-selected="true"] { background: var(--fg); border-color: var(--fg); color: var(--on); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .toolbar input { flex: 1; min-width: 180px; }
+  .list { display: grid; gap: 12px; }
+  .store h2 { font-size: 1.1rem; margin: 0; overflow-wrap: anywhere; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .pill { display: inline-flex; align-items: center; min-height: 26px; padding: 0 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700;
+          background: var(--soft); color: var(--muted); }
+  .pill.pending { background: #F6E7D6; color: var(--clay); }
+  .pill.approved { background: #DCEFEA; color: var(--teal); }
+  .pill.suspended, .pill.warn { background: #F5DCD7; color: var(--danger); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 12px 0; font-size: 0.95rem; }
+  dt { color: var(--muted); }
+  dd { margin: 0; overflow-wrap: anywhere; }
+  details summary { cursor: pointer; color: var(--teal); font-weight: 600; min-height: 32px; }
+  iframe { width: 100%; height: 260px; border: 1px solid var(--line); border-radius: 12px; margin-top: 8px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .empty { padding: 32px 16px; text-align: center; color: var(--muted); }
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--fg); color: var(--on); padding: 12px 18px;
+           border-radius: 12px; font-weight: 600; max-width: calc(100% - 32px); }
+  @media (max-width: 560px) { dl { grid-template-columns: 1fr; gap: 0; } dt { margin-top: 6px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Aling Nena Admin</h1>
+    <span class="who" id="who"></span>
+    <button class="btn ghost" id="signOut" hidden>Sign out</button>
+  </header>
+  <main id="app"></main>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+// Replaced at deploy time by .github/workflows/landing-pages.yml (secrets SUPABASE_URL, SUPABASE_ANON_KEY).
+// Opened locally, the page asks for them once and keeps them in this browser.
+const BAKED_URL = "https://xrcivouraurenbzgppkn.supabase.co";
+const BAKED_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhyY2l2b3VyYXVyZW5iemdwcGtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3Nzk2MzgsImV4cCI6MjEwNzM1NTYzOH0.cAo1e4KxBoROirJk_bVeKaalakHl5AmlMq4xl2FjDLA";
+
+const REASONS = {
+  wrong_item_price: "Wrong item or price", not_given: "Item not given", bad_treatment: "Bad treatment",
+  fake_store: "Fake store", fake_review: "Fake review", other: "Other",
+};
+
+const $app = document.getElementById("app");
+const state = { tab: "pending", stores: [], reports: [], query: "" };
+let db = null;
+
+function store(key, value) {
+  try {
+    if (value === undefined) return localStorage.getItem(key);
+    if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value);
+  } catch (_) { return null; }
+}
+
+/** Builds an element. Strings become text nodes, never HTML. */
+function h(tag, props, ...children) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (k === "class") el.className = v;
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of children.flat()) {
+    if (c == null || c === false) continue;
+    el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  }
+  return el;
+}
+
+function toast(text) {
+  const t = document.getElementById("toast");
+  t.textContent = text;
+  t.hidden = false;
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => { t.hidden = true; }, 3500);
+}
+
+function errorText(e) {
+  const msg = (e && (e.message || e.error_description)) || String(e);
+  if (msg.includes("not_admin")) return "This account is not an admin.";
+  if (msg.includes("store_not_found")) return "That store no longer exists.";
+  if (msg.includes("report_not_found")) return "That report no longer exists.";
+  return msg;
+}
+
+const fmtDate = (s) => s ? new Date(s).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "";
+const fmtTime = (t) => {
+  if (!t) return "";
+  const [hh, mm] = t.split(":").map(Number);
+  return new Date(2000, 0, 1, hh, mm).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+};
+
+// ---------------------------------------------------------------------------
+// Setup and sign-in
+// ---------------------------------------------------------------------------
+function config() {
+  const baked = !BAKED_URL.startsWith("__") && !BAKED_KEY.startsWith("__");
+  if (baked) return { url: BAKED_URL, key: BAKED_KEY };
+  const url = store("an_admin_url"), key = store("an_admin_key");
+  return url && key ? { url, key } : null;
+}
+
+function renderSetup() {
+  const err = h("p", { class: "error", hidden: true });
+  $app.replaceChildren(h("form", {
+    class: "login card",
+    onsubmit(e) {
+      e.preventDefault();
+      const f = new FormData(e.target);
+      const url = String(f.get("url")).trim(), key = String(f.get("key")).trim();
+      if (!/^https:\/\/.+/.test(url) || !key) { err.textContent = "Enter the project URL and anon key."; err.hidden = false; return; }
+      store("an_admin_url", url);
+      store("an_admin_key", key);
+      start();
+    },
+  },
+    h("p", { class: "muted" }, "Local copy: enter the Supabase project URL and anon key (the same values as local.properties). They stay in this browser."),
+    h("label", {}, "Project URL", h("input", { name: "url", type: "url", required: true, placeholder: "https://xxxx.supabase.co" })),
+    h("label", {}, "Anon key", h("input", { name: "key", required: true, autocomplete: "off" })),
+    err,
+    h("button", { class: "btn", type: "submit" }, "Continue"),
+  ));
+}
+
+function renderLogin(message) {
+  const err = h("p", { class: "error", hidden: !message }, message || "");
+  const submit = h("button", { class: "btn", type: "submit" }, "Sign in");
+  $app.replaceChildren(h("form", {
+    class: "login card",
+    async onsubmit(e) {
+      e.preventDefault();
+      const f = new FormData(e.target);
+      submit.disabled = true;
+      err.hidden = true;
+      const { error } = await db.auth.signInWithPassword({ email: String(f.get("email")).trim(), password: String(f.get("password")) });
+      submit.disabled = false;
+      if (error) { err.textContent = errorText(error); err.hidden = false; }
+    },
+  },
+    h("label", {}, "Email", h("input", { name: "email", type: "email", required: true, autocomplete: "username" })),
+    h("label", {}, "Password", h("input", { name: "password", type: "password", required: true, autocomplete: "current-password" })),
+    err,
+    submit,
+    !BAKED_URL.startsWith("__") ? null : h("button", {
+      class: "btn ghost", type: "button",
+      onclick() { store("an_admin_url", null); store("an_admin_key", null); location.reload(); },
+    }, "Change project"),
+  ));
+}
+
+// ---------------------------------------------------------------------------
+// Data
+// ---------------------------------------------------------------------------
+async function load() {
+  $app.replaceChildren(h("p", { class: "empty" }, "Loading…"));
+  const [stores, reports] = await Promise.all([db.rpc("admin_list_stores"), db.rpc("admin_list_reports")]);
+  const error = stores.error || reports.error;
+  if (error) {
+    if (errorText(error).includes("not an admin")) {
+      await db.auth.signOut();
+      renderLogin(errorText(error));
+      return;
+    }
+    $app.replaceChildren(h("p", { class: "error" }, errorText(error)), h("button", { class: "btn", onclick: load }, "Try again"));
+    return;
+  }
+  state.stores = stores.data || [];
+  state.reports = reports.data || [];
+  render();
+}
+
+async function setStoreStatus(s, status, button) {
+  const verbs = { approved: "Approve", suspended: "Suspend", pending: "Move back to pending" };
+  if (status !== "approved" && !confirm(`${verbs[status]} "${s.name}"? It stops receiving requests and closes now.`)) return;
+  button.disabled = true;
+  const { error } = await db.rpc("admin_set_store_status", { p_store_id: s.id, p_status: status });
+  button.disabled = false;
+  if (error) { toast(errorText(error)); return; }
+  toast(status === "approved" ? `Approved ${s.name}. The owner gets a push.` : `${s.name} is now ${status}.`);
+  await load();
+}
+
+async function setReportStatus(r, status, button) {
+  button.disabled = true;
+  const { error } = await db.rpc("admin_set_report_status", { p_report_id: r.id, p_status: status });
+  button.disabled = false;
+  if (error) { toast(errorText(error)); return; }
+  await load();
+}
+
+// ---------------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------------
+function render() {
+  const count = (st) => state.stores.filter((s) => s.status === st).length;
+  const openReports = state.reports.filter((r) => r.status === "open").length;
+  const tabs = [
+    ["pending", `Pending (${count("pending")})`],
+    ["approved", `Approved (${count("approved")})`],
+    ["suspended", `Suspended (${count("suspended")})`],
+    ["reports", `Reports (${openReports} open)`],
+  ];
+  const content = state.tab === "reports" ? renderReports() : renderStores();
+  $app.replaceChildren(
+    h("div", { class: "tabs", role: "tablist" }, tabs.map(([id, label]) => h("button", {
+      class: "tab", role: "tab", "aria-selected": String(state.tab === id),
+      onclick() { state.tab = id; store("an_admin_tab", id); render(); },
+    }, label))),
+    h("div", { class: "toolbar" },
+      h("input", {
+        type: "search", placeholder: "Search name, owner, phone, barangay", value: state.query, "aria-label": "Search",
+        oninput(e) { state.query = e.target.value; const pos = e.target.selectionStart; render(); const i = $app.querySelector("input[type=search]"); i.focus(); i.setSelectionRange(pos, pos); },
+      }),
+      h("button", { class: "btn ghost", onclick: load }, "Refresh"),
+    ),
+    content,
+  );
+}
+
+function matches(...fields) {
+  const q = state.query.trim().toLowerCase();
+  return !q || fields.some((f) => f && String(f).toLowerCase().includes(q));
+}
+
+function renderStores() {
+  const list = state.stores
+    .filter((s) => s.status === state.tab)
+    .filter((s) => matches(s.name, s.owner_name, s.owner_email, s.contact_phone, s.barangay, s.subdivision, s.city));
+  // Pending: oldest first, so the longest wait is on top.
+  if (state.tab === "pending") list.reverse();
+  if (!list.length) return h("p", { class: "empty" }, state.tab === "pending" ? "No stores waiting for approval." : "No stores here.");
+  return h("div", { class: "list" }, list.map(storeCard));
+}
+
+function storeCard(s) {
+  const address = [s.line1, s.subdivision, s.barangay, s.city, s.province, s.zip].filter(Boolean).join(", ");
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`;
+  const d = 0.003;
+  const embed = `https://www.openstreetmap.org/export/embed.html?bbox=${s.lng - d},${s.lat - d},${s.lng + d},${s.lat + d}&layer=mapnik&marker=${s.lat},${s.lng}`;
+  const map = h("details", {
+    ontoggle(e) {
+      if (e.target.open && !e.target.querySelector("iframe")) e.target.append(h("iframe", { src: embed, title: `Map pin for ${s.name}`, loading: "lazy" }));
+    },
+  }, h("summary", {}, "Show pin on map"));
+
+  const buttons = [];
+  const btn = (label, status, cls) => {
+    const b = h("button", { class: `btn ${cls || ""}`, onclick: () => setStoreStatus(s, status, b) }, label);
+    buttons.push(b);
+  };
+  if (s.status === "pending") { btn("Approve", "approved"); btn("Suspend", "suspended", "danger"); }
+  if (s.status === "approved") { btn("Suspend", "suspended", "danger"); btn("Back to pending", "pending", "ghost"); }
+  if (s.status === "suspended") { btn("Reinstate", "approved"); btn("Back to pending", "pending", "ghost"); }
+
+  return h("article", { class: "card store" },
+    h("div", { class: "row" },
+      h("h2", {}, s.name),
+      h("span", { class: `pill ${s.status}` }, s.status),
+      s.status === "approved" ? h("span", { class: "pill" }, s.is_open ? "Open" : "Closed") : null,
+      s.open_reports ? h("span", { class: "pill warn" }, `${s.open_reports} open report${s.open_reports > 1 ? "s" : ""}`) : null,
+      s.ran_out_7d >= 3 ? h("span", { class: "pill warn" }, `Ran out ${s.ran_out_7d}× in 7 days`) : null,
+    ),
+    h("dl", {},
+      h("dt", {}, "Owner"), h("dd", {}, s.owner_name || "—", s.owner_email ? ` · ${s.owner_email}` : ""),
+      h("dt", {}, "Store number"), h("dd", {}, s.contact_phone ? h("a", { href: `tel:${s.contact_phone}` }, s.contact_phone) : "—"),
+      h("dt", {}, "Address"), h("dd", {}, address || "—", s.landmark ? ` (near ${s.landmark})` : ""),
+      h("dt", {}, "Pin"), h("dd", {},
+        h("a", { href: mapsUrl, target: "_blank", rel: "noopener" }, `${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}`),
+        s.accuracy_m != null ? ` · ±${Math.round(s.accuracy_m)} m` : ""),
+      h("dt", {}, "Hours"), h("dd", {}, `${fmtTime(s.opens_at)} – ${fmtTime(s.closes_at)}`),
+      h("dt", {}, "Submitted"), h("dd", {}, fmtDate(s.created_at)),
+      s.approved_at ? [h("dt", {}, "Approved"), h("dd", {}, fmtDate(s.approved_at))] : null,
+      s.status !== "pending" ? [h("dt", {}, "Pickups, 30 days"), h("dd", {}, String(s.completed_30d))] : null,
+    ),
+    map,
+    h("div", { class: "actions" }, buttons),
+  );
+}
+
+function renderReports() {
+  const list = state.reports.filter((r) => matches(r.store_name, r.reporter_name, r.details, REASONS[r.reason]));
+  if (!list.length) return h("p", { class: "empty" }, "No reports.");
+  return h("div", { class: "list" }, list.map((r) => {
+    const buttons = [];
+    const btn = (label, status, cls) => {
+      const b = h("button", { class: `btn ${cls || ""}`, onclick: () => setReportStatus(r, status, b) }, label);
+      buttons.push(b);
+    };
+    if (r.status === "open") { btn("Actioned", "actioned"); btn("Reviewed", "reviewed", "ghost"); btn("Dismiss", "dismissed", "ghost"); }
+    else btn("Reopen", "open", "ghost");
+    return h("article", { class: "card" },
+      h("div", { class: "row" },
+        h("strong", {}, r.store_name),
+        h("span", { class: `pill ${r.status === "open" ? "warn" : ""}` }, r.status),
+        h("span", { class: "pill" }, REASONS[r.reason] || r.reason),
+      ),
+      h("p", {}, r.details || h("span", { class: "muted" }, "No details.")),
+      h("p", { class: "muted" }, `${r.reporter_name || "A buyer"} · ${fmtDate(r.created_at)}${r.reservation_id ? " · from a reservation" : ""}`),
+      h("div", { class: "actions" }, buttons),
+    );
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Start
+// ---------------------------------------------------------------------------
+function start() {
+  const cfg = config();
+  if (!cfg) { renderSetup(); return; }
+  db = supabase.createClient(cfg.url, cfg.key, { auth: { storageKey: "an-admin-auth" } });
+  state.tab = store("an_admin_tab") || "pending";
+  const who = document.getElementById("who");
+  const signOut = document.getElementById("signOut");
+  signOut.onclick = () => db.auth.signOut();
+  let signedIn = null;
+  db.auth.onAuthStateChange((_event, session) => {
+    const id = session ? session.user.id : null;
+    if (id === signedIn) return;
+    signedIn = id;
+    who.textContent = session ? session.user.email : "";
+    signOut.hidden = !session;
+    // Leave the auth callback before calling the API (supabase-js deadlocks otherwise).
+    setTimeout(() => (session ? load() : renderLogin()), 0);
+  });
+}
+
+start();
+</script>
+</body>
+</html>
