@@ -365,7 +365,8 @@ function start() {
   const who = document.getElementById("who");
   const signOut = document.getElementById("signOut");
   signOut.onclick = () => db.auth.signOut();
-  let signedIn = null;
+  // undefined, not null: the first event (INITIAL_SESSION, often signed out) must always render.
+  let signedIn;
   db.auth.onAuthStateChange((_event, session) => {
     const id = session ? session.user.id : null;
     if (id === signedIn) return;
