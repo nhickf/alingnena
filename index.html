@@ -145,7 +145,7 @@
         <a class="btn primary" id="join-btn" href="#install">Sumali sa pilot</a>
         <a class="btn secondary" href="#tindahan">May tindahan ako</a>
       </div>
-      <p class="fine">Libre i-download sa Google Play. Android lang muna habang pilot.</p>
+      <p class="fine">Sumali muna sa pilot group, tapos i-download nang libre sa Google Play. Android lang muna habang pilot.</p>
     </div>
 
     <figure class="demo" aria-label="Halimbawa ng search at mga sagot ng tindahan" style="margin:0">
@@ -200,13 +200,12 @@
   <div class="wrap">
     <p class="eyebrow">Paano sumali sa pilot</p>
     <h2>Mga 3 minuto lang, sa Android phone mo</h2>
-    <p class="lead" style="margin-top:14px">Habang pilot pa, kailangan munang sumali bilang tester bago lumabas ang app sa Play Store.</p>
+    <p class="lead" style="margin-top:14px">Habang pilot pa, <strong>sumali muna sa pilot group</strong> bago i-download ang app sa Play Store. Kung hindi ka pa kasali sa group, hindi lalabas ang Install button.</p>
     <div class="install">
       <ol>
-        <li><strong>Buksan ang Play Store at tingnan ang account mo</strong><span>I-tap ang bilog na picture sa itaas. Iyan ang Gmail na gagamitin mo sa lahat ng susunod na hakbang.</span></li>
-        <li><strong>Sumali sa Aling Nena pilot group</strong><span id="group-step">Buksan ang <a href="https://groups.google.com/g/alingnena-tester" target="_blank" rel="noopener">alingnena-tester group</a> at i-tap ang "Join group" gamit ang parehong Gmail. Kasali ka na agad.</span></li>
-        <li><strong>Buksan ang tester link at i-tap ang "Become a tester"</strong><span id="optin-step">Ipapadala namin ang link sa Messenger o sa group chat ng subdivision.</span></li>
-        <li><strong>I-tap ang "Download it on Google Play," tapos Install</strong><span>O buksan ang <a href="https://play.google.com/store/apps/details?id=com.creativegrpcx.alingnenasuperapp" target="_blank" rel="noopener">Aling Nena sa Play Store</a>. Puwedeng ilang minuto bago lumabas ang Install button pagkatapos sumali.</span></li>
+        <li><strong>Unahin: sumali sa Aling Nena pilot group</strong><span id="group-step">Buksan ang <a href="https://groups.google.com/g/alingnena-tester" target="_blank" rel="noopener">alingnena-tester group</a> at i-tap ang "Join group" gamit ang Gmail na naka-sign in sa Play Store mo (i-tap ang bilog na picture sa itaas ng Play Store para makita). Kasali ka na agad.</span></li>
+        <li><strong>Pagkasali sa group, buksan ang tester link at i-tap ang "Become a tester"</strong><span id="optin-step">Ipapadala namin ang link sa Messenger o sa group chat ng subdivision.</span></li>
+        <li><strong>Saka i-download sa Play Store: i-tap ang "Download it on Google Play," tapos Install</strong><span>O buksan ang <a href="https://play.google.com/store/apps/details?id=com.creativegrpcx.alingnenasuperapp" target="_blank" rel="noopener">Aling Nena sa Play Store</a>. Puwedeng ilang minuto bago lumabas ang Install button pagkatapos sumali.</span></li>
         <li><strong>Buksan ang app at mag-sign in gamit ang parehong Gmail</strong><span>Ilagay ang address pin at contact number mo, at handa ka na.</span></li>
       </ol>
       <p class="helper">Hindi sanay sa ganito? Okay lang. Puwede ka naming puntahan para i-set up ito sa phone mo, kasama ang pagrehistro ng tindahan.</p>
@@ -260,16 +259,12 @@
     group: "https://groups.google.com/g/alingnena-tester",   // https://groups.google.com/g/<your-group>
   };
   if (LINKS.optIn) {
-    const btn = document.getElementById("join-btn");
-    btn.href = LINKS.optIn;
-    btn.target = "_blank";
-    btn.rel = "noopener";
     document.getElementById("optin-step").innerHTML =
       'Narito ang link: <a href="' + LINKS.optIn + '" target="_blank" rel="noopener">sumali sa Aling Nena test</a>.';
   }
   if (LINKS.group) {
     document.getElementById("group-step").innerHTML =
-      'Buksan ang <a href="' + LINKS.group + '" target="_blank" rel="noopener">alingnena-tester group</a> at i-tap ang "Join group" gamit ang parehong Gmail. Kasali ka na agad.';
+      'Buksan ang <a href="' + LINKS.group + '" target="_blank" rel="noopener">alingnena-tester group</a> at i-tap ang "Join group" gamit ang Gmail na naka-sign in sa Play Store mo (i-tap ang bilog na picture sa itaas ng Play Store para makita). Kasali ka na agad.';
   }
 </script>
 </body>
