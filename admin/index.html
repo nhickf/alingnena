@@ -94,7 +94,7 @@ const REASONS = {
 };
 
 const $app = document.getElementById("app");
-const state = { tab: "pending", stores: [], reports: [], query: "" };
+const state = { tab: "pending", stores: [], reports: [], query: "", demoEnabled: null };
 let db = null;
 
 function store(key, value) {
@@ -206,7 +206,9 @@ function renderLogin(message) {
 // ---------------------------------------------------------------------------
 async function load() {
   $app.replaceChildren(h("p", { class: "empty" }, "Loading…"));
-  const [stores, reports] = await Promise.all([db.rpc("admin_list_stores"), db.rpc("admin_list_reports")]);
+  const [stores, reports, demo] = await Promise.all([
+    db.rpc("admin_list_stores"), db.rpc("admin_list_reports"), db.rpc("admin_get_demo_stores"),
+  ]);
   const error = stores.error || reports.error;
   if (error) {
     if (errorText(error).includes("not an admin")) {
@@ -219,6 +221,8 @@ async function load() {
   }
   state.stores = stores.data || [];
   state.reports = reports.data || [];
+  // null until the demo-stores migration is applied; the Demo tab then stays hidden.
+  state.demoEnabled = demo.error ? null : demo.data === true;
   render();
 }
 
@@ -230,6 +234,16 @@ async function setStoreStatus(s, status, button) {
   button.disabled = false;
   if (error) { toast(errorText(error)); return; }
   toast(status === "approved" ? `Approved ${s.name}. The owner gets a push.` : `${s.name} is now ${status}.`);
+  await load();
+}
+
+async function setDemoStores(enabled, button) {
+  if (!enabled && !confirm("Turn demo stores off? Testers outside the subdivision get \"no stores nearby\" again.")) return;
+  button.disabled = true;
+  const { error } = await db.rpc("admin_set_demo_stores", { p_enabled: enabled });
+  button.disabled = false;
+  if (error) { toast(errorText(error)); return; }
+  toast(enabled ? "Demo stores are on." : "Demo stores are off.");
   await load();
 }
 
@@ -245,7 +259,7 @@ async function setReportStatus(r, status, button) {
 // Rendering
 // ---------------------------------------------------------------------------
 function render() {
-  const count = (st) => state.stores.filter((s) => s.status === st).length;
+  const count = (st) => state.stores.filter((s) => !s.is_demo && s.status === st).length;
   const openReports = state.reports.filter((r) => r.status === "open").length;
   const tabs = [
     ["pending", `Pending (${count("pending")})`],
@@ -253,7 +267,9 @@ function render() {
     ["suspended", `Suspended (${count("suspended")})`],
     ["reports", `Reports (${openReports} open)`],
   ];
-  const content = state.tab === "reports" ? renderReports() : renderStores();
+  if (state.demoEnabled !== null) tabs.push(["demo", `Demo (${state.demoEnabled ? "on" : "off"})`]);
+  if (state.tab === "demo" && state.demoEnabled === null) state.tab = "pending";
+  const content = state.tab === "reports" ? renderReports() : state.tab === "demo" ? renderDemo() : renderStores();
   $app.replaceChildren(
     h("div", { class: "tabs", role: "tablist" }, tabs.map(([id, label]) => h("button", {
       class: "tab", role: "tab", "aria-selected": String(state.tab === id),
@@ -277,12 +293,35 @@ function matches(...fields) {
 
 function renderStores() {
   const list = state.stores
-    .filter((s) => s.status === state.tab)
+    .filter((s) => !s.is_demo && s.status === state.tab)
     .filter((s) => matches(s.name, s.owner_name, s.owner_email, s.contact_phone, s.barangay, s.subdivision, s.city));
   // Pending: oldest first, so the longest wait is on top.
   if (state.tab === "pending") list.reverse();
   if (!list.length) return h("p", { class: "empty" }, state.tab === "pending" ? "No stores waiting for approval." : "No stores here.");
   return h("div", { class: "list" }, list.map(storeCard));
+}
+
+// Demo stores answer testers outside the pilot area (migration 20261022000100_demo_stores.sql).
+function renderDemo() {
+  const on = state.demoEnabled;
+  const toggle = h("button", { class: `btn ${on ? "danger" : ""}`, onclick: () => setDemoStores(!on, toggle) },
+    on ? "Turn demo stores off" : "Turn demo stores on");
+  const demos = state.stores.filter((s) => s.is_demo);
+  return h("div", { class: "list" },
+    h("article", { class: "card" },
+      h("div", { class: "row" }, h("h2", {}, "Demo stores"), h("span", { class: `pill ${on ? "approved" : "suspended"}` }, on ? "On" : "Off")),
+      h("p", {}, "When no real store is open within 1 km, a buyer's request goes to these demo stores. A bot answers in 10–60 s "
+        + "with offers or Wala, and a reserved item counts as picked up after 1 minute. Real stores always win."),
+      h("div", { class: "actions" }, toggle),
+    ),
+    demos.map((s) => h("article", { class: "card" },
+      h("div", { class: "row" },
+        h("h2", {}, s.name),
+        h("span", { class: "pill" }, s.status === "approved" && s.is_open ? "Answering" : "Not answering"),
+      ),
+      h("dl", {}, h("dt", {}, "Pickups, 30 days"), h("dd", {}, String(s.completed_30d))),
+    )),
+  );
 }
 
 function storeCard(s) {
